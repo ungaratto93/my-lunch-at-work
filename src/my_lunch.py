@@ -15,24 +15,6 @@ class Lunch(object):
 		"""get options to be voted"""
 		return self.options
 
-	def load_past_week_choices(self, week_number):
-		"""Return options choiced on this week, load files pasted voted on weeknumber"""
-		was_voted = ''
-		try:
-			basepath = os.getcwd() + str('\\')
-			for filename in os.listdir(basepath):
-			    if filename.endswith(".txt") and str(week_number) in filename: 
-			        print(os.path.join("\\", filename))
-
-			        with open(basepath + filename) as openfile:    
-			            for line in openfile:
-			            	print(line)
-			            	was_voted = was_voted + line + ',' 
-
-		except Exception as e:
-			raise e
-		return was_voted
-
 	def get_day_number(self):
 		try:
 			week_day = datetime.today().weekday()+1
@@ -50,6 +32,25 @@ class Lunch(object):
 			logging.warn('You need import datetime lib')
 		return week_number
 
+	def load_past_week_choices(self):
+		"""Return options choiced on this week, load files pasted voted on weeknumber"""
+		was_voted = ''
+		try:
+			week_number = self.get_week_number()
+			basepath = os.getcwd() + str('\\')
+			for filename in os.listdir(basepath):
+			    if filename.endswith(".txt") and str(week_number) in filename: 
+			        print(os.path.join("\\", filename))
+
+			        with open(basepath + filename) as openfile:    
+			            for line in openfile:
+			            	print(line)
+			            	was_voted = was_voted + line + ',' 
+
+		except Exception as e:
+			logging.error(e)
+		return was_voted
+
 	def get_keyname(self, options, choice):
 		key_name = ''
 		try:
@@ -59,38 +60,20 @@ class Lunch(object):
 			logging.error(e)
 		return key_name
 
-	def save_choice(self, choice, week_number, week_day):
+	def set_choice(self, choice, key):
 		try:
-			with open(''+datetime.now().strftime("%y_"+str(week_number)+"_"+str(week_day)) + '.txt', 'w', encoding='utf-8') as logfile:
-				logfile.write(str(choice))
-			response = "choice was saved ? " + str(True)
-		except Exception as e:
-			logging.error(e)
-			response = "choice was saved ? " + str(False)
-		return response
+			print('Your choice is: ' + str(key))
+			print('Before your vote: ' + str(self.options[choice][key]['votes']))
+			votes = self.options[choice][key]['votes']
+			votes = votes + 1
+			self.options[choice][key]['votes'] = votes
+			print('Now with your vote: ' + str(self.options[choice][key]['votes']))
+		except IndexError:
+			logging.error('Invalid index position')
 
-	def choice_lunch_today(self, options_past_voted):
-		"""Make a votation based on options and quantity coworkers participants"""
+	def compute_choice(self, options_past_voted):
 		try:
-			print('Enter quantity of participants:')
-			players = int(input())
-			index = 0
-			key_choice = ''
-			response = None
-			while index < players:
-				print(str(index) + ' Make your choice:')
-				choice = int(input())
-				key = self.get_keyname(self.options, choice)
-				print('Your choice is: ' + str(key))
-				print('Before your vote: ' + str(self.options[choice][key]['votes']))
-				votes = self.options[choice][key]['votes']
-				votes = votes + 1
-				self.options[choice][key]['votes'] = votes
-				print('Now with your vote: ' + str(self.options[choice][key]['votes']))
-
-				index = index + 1
-				pprint.pprint(self.options)
-
+			response = False
 			zindex =0
 			compute_votes = 0
 			key = ''
@@ -106,15 +89,56 @@ class Lunch(object):
 			print('Options past voted was: ' + str(options_past_voted))
 
 			if key in options_past_voted:
-				response = False
 				logging.warning('Cannot be repeated! Run again!')
 			else:
 				response = True
+		except IndexError:
+			logging.error('Invalid index position')
+		return response, key
+
+	def save_choice(self, choice):
+		try:
+			print("Store this : " + str(choice))	
+			week_day = self.get_day_number()
+			week_number = self.get_week_number()
+			with open(''+datetime.now().strftime("%y_"+str(week_number)+"_"+str(week_day)) + '.txt', 'w', encoding='utf-8') as logfile:
+				logfile.write(str(choice))
+			response = True
+		except Exception as e:
+			logging.error(e)
+			response = False
+		return response
+
+	def choice_lunch_today(self, options_past_voted):
+		"""Make a votation based on options and quantity coworkers participants"""
+		try:
+			pprint.pprint(self.options)
+			print('Enter quantity of participants:')
+			players = int(input())
+			index = 0
+			key_choice = ''
+			response = None
+			while index < players:
+				print(str(index) + ' Make your choice: ')
+				choice = int(input())
+				key = self.get_keyname(self.options, choice)
+				self.set_choice(choice, key)
+
+				index = index + 1
+				pprint.pprint(self.options)
+
+			response, store_choice = self.compute_choice(options_past_voted)
+			if response is True:	
+				status = self.save_choice(store_choice)
+				print("Status : " + str(status))
+			else:
+				print("Status : " + str(status))
 
 		except TypeError as e:
 			logging.error(e)
 			logging.warn('input a integer number')
 		except ValueError as e:
 			logging.error(e)
-			logging.warning('input a integer number')		
-		return response, key
+			logging.warning('input a integer number')
+		except NameError:
+			logging.error('object not found')		
