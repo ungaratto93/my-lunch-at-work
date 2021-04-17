@@ -1,4 +1,4 @@
-from my_lunch import Lunch
+from lunch import Lunch
 
 def main():
 
@@ -11,15 +11,7 @@ def main():
 	}
 
 	lunch = Lunch(options)
-	day = lunch.get_day_number()
-	week = lunch.get_week_number()
-	options_past_voted = lunch.load_past_week_choices(week)
-	response, store_choice = lunch.choice_lunch_today(options_past_voted)
-
-	if response is True:
-		print(store_choice)
-		status = lunch.save_choice(store_choice, week, day)
-		print(status)
-
+	options_past_voted = lunch.load_past_week_choices()
+	lunch.choice_lunch_today(options_past_voted)
 
 main()
