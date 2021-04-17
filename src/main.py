@@ -1,4 +1,4 @@
-from my_lunch import Lunch
+from lunch import Lunch
 
 def main():
 
